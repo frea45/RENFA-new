@@ -26,8 +26,7 @@ async def create_vip(client, message: Message):
     
     code = generate_code()
     vip_codes[code] = {"used": False}
-    await message.reply_text(f"✅ کد VIP یکبار مصرف ساخته شد:
-`/vip {code}`")
+    await message.reply_text(f"✅ کد VIP یکبار مصرف ساخته شد:\n`/vip {code}`")
 
 @app.on_message(filters.command("vip"))
 async def redeem_vip(client, message: Message):
@@ -35,8 +34,7 @@ async def redeem_vip(client, message: Message):
     user = await db.get_user(user_id)
 
     if len(message.command) < 2:
-        return await message.reply_text("❗️ لطفاً کد VIP را وارد کنید.
-مثال: `/vip abc123xyz`", quote=True)
+        return await message.reply_text("❗️ لطفاً کد VIP را وارد کنید.\nمثال: `/vip abc123xyz`", quote=True)
 
     code = message.command[1]
 
@@ -63,7 +61,6 @@ async def redeem_vip(client, message: Message):
     vip_codes[code]["used"] = True
 
     await message.reply_text(
-        f"🎉 پلن VIP پانزده‌روزه با حجم روزانه ۵ گیگابایت برای شما فعال شد.
-"
+        f"🎉 پلن VIP پانزده‌روزه با حجم روزانه ۵ گیگابایت برای شما فعال شد."
         f"تاریخ انقضا: {datetime.fromtimestamp(expire).strftime('%Y-%m-%d %H:%M')}"
     )
