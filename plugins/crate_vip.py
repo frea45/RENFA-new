@@ -1,7 +1,7 @@
 
 from pyrogram import filters
 from pyrogram.types import Message
-from loader import app
+from bot import app
 from database.access import db
 from datetime import datetime, timedelta
 import time
