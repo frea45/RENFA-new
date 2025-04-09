@@ -73,8 +73,7 @@ async def start(client, message):
         percent = round(used_today / daily_limit * 100, 1)
         percent_text = f"{percent}".rstrip("0").rstrip(".") if percent % 1 == 0 else f"{percent}"
         name = message.from_user.first_name
-
-        text = f"""🔰 وضعیت پلن: {plan_name}
+  text = f"""🔰 وضعیت پلن: {plan_name}
 
 👤 نام کاربر: {name}
 🆔 آیدی عددی: `{user_id}`
@@ -86,12 +85,15 @@ async def start(client, message):
 📊 درصد مصرف‌شده: {percent_text}%
 {bar}
 """
-        await message.reply_text(text)
-        return
+await message.reply_text(text)
+return
 
-
-else:
-        await message.reply(text, quote=True, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✖️ بستن ✖️", callback_data="cancel")]]))
-
-
-
+# این بخش دیگه نیازی به else نداره چون return زدی
+await message.reply(
+    text,
+    quote=True,
+    reply_markup=InlineKeyboardMarkup(
+        [[InlineKeyboardButton("✖️ بستن ✖️", callback_data="cancel")]]
+    )
+)
+      
