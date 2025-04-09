@@ -5,7 +5,7 @@ from pyrogram.types import Message
 from config import FREE_PLAN
 #from database.access import db
 from datetime import datetime
-from loader import app
+from bot import bot as app
 
 GIFT_DAYS = 7
 GIFT_DAILY_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
