@@ -25,3 +25,11 @@ BOT_PIC = os.environ.get("BOT_PIC", "https://telegra.ph/file/19eeb26fa2ce5876591
 SHORTNER_URL = os.environ.get("SHORTNER_URL", "")
 SHORTNER_API = os.environ.get("SHORTNER_API", "")
 TOKEN_TIMEOUT = os.environ.get("TOKEN_TIMEOUT", "")
+
+FREE_PLAN = {
+    "daily_limit": 1024 * 1024 * 500,  # 500 MB مثلاً
+    "file_limit": 1024 * 1024 * 100,   # حداکثر حجم هر فایل 100MB
+    "cooldown": 3600,                  # 1 ساعت فاصله بین آپلودها
+    "valid_days": 0                    # پلن رایگان دائمی است
+}
+
