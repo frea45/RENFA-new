@@ -18,7 +18,7 @@ def generate_code(length=10):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 # فقط ادمین‌ها می‌توانند کد VIP بسازند
-ADMINS = [ADMIN_ID_1, ADMIN_ID_2]  # شناسه عددی ادمین‌ها را اینجا وارد کنید
+ADMINS = [763990585]  # شناسه عددی ادمین‌ها را اینجا وارد کنید
 
 @app.on_message(filters.command("crate_vip"))
 async def create_vip(client, message: Message):
