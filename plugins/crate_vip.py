@@ -1,7 +1,8 @@
 
 from pyrogram import filters
 from pyrogram.types import Message
-from bot import app
+from bot import bot as app
+
 from database.access import db
 from datetime import datetime, timedelta
 import time
