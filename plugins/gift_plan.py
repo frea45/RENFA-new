@@ -3,7 +3,7 @@ import time
 from pyrogram import filters
 from pyrogram.types import Message
 from config import FREE_PLAN
-from database.access import db
+#from database.access import db
 from datetime import datetime
 from loader import app
 
