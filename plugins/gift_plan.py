@@ -4,7 +4,7 @@ from pyrogram import filters
 from pyrogram.types import Message
 from config import FREE_PLAN
 #from database.access import db
-from datetime import datetime
+from helper import date
 from bot import bot as app
 
 GIFT_DAYS = 7
