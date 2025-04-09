@@ -1,5 +1,5 @@
 
-from helper import warn_scheduler
+
 from pyrogram import Client, idle
 from plugins.cb_data import app as Client2
 from config import *
