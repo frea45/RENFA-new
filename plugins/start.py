@@ -1,20 +1,19 @@
 from datetime import date as date_
 import datetime
-import os
-import asyncio
-import random
 import time
 import humanize
+import asyncio
 
 from script import *
-from pyrogram import Client, filters, enums
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
+from pyrogram.file_id import FileId
 
 from helper.progress import humanbytes
 from helper.database import (
-    botdata, find_one, total_user, insert, used_limit,
-    usertype, uploadlimit, addpredata, total_rename, total_size, daily as daily_
+    botdata, find_one, insert, used_limit, usertype,
+    uploadlimit, daily as daily_, total_rename, total_size
 )
 from helper.date import check_expi
 from config import *
@@ -31,30 +30,25 @@ async def start(client, message):
     insert(int(user_id))
 
     try:
-        id = message.text.split(' ')[1]
+        _ = message.text.split(' ')[1]
     except IndexError:
-        id = None
+        pass
 
-    loading = await message.reply_sticker("CAACAgUAAxkBAAEKVaxlCWGs1Ri6ti45xliLiUeweCnu4AACBAADwSQxMYnlHW4Ls8gQMAQ")
-    await asyncio.sleep(1)
-    await loading.delete()
+    await asyncio.sleep(0.5)
+    txt = f"""سلام {message.from_user.mention}
 
-    txt = f"""**سلام {message.from_user.mention} 
+• به ربات تغییر نام فایل خوش آمدید
+• یک فایل بفرستید تا نامش را به دلخواه شما تغییر دهم
 
-• به ربات تغییرنام فایل‌ها خوش آمدید 
-• هم اکنون یک فایل برایم ارسال کنید تا نام آن را به دلخواه شما تغییر دهم.
-
-سازنده ربات : [FﾑRSみɨの-BﾑŊの](t.me/farshidband)**"""
+سازنده: [FﾑRSみɨの-BﾑŊの](t.me/farshidband)"""
 
     await message.reply_photo(
         photo=BOT_PIC,
         caption=txt,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("کانال پشتیبانی", url="https://t.me/ir_botz")],
-            [
-                InlineKeyboardButton("راهنمای ربات", callback_data='help'),
-                InlineKeyboardButton("ارتقا پلن", callback_data='upgrade')
-            ]
+            [InlineKeyboardButton("کانال ما", url="https://t.me/ir_botz")],
+            [InlineKeyboardButton("راهنما", callback_data='help'),
+             InlineKeyboardButton("ارتقا پلن", callback_data='upgrade')]
         ])
     )
 
@@ -76,27 +70,28 @@ async def send_doc(client, message):
             user_plan = user_data.get("usertype", "Free")
 
             await message.reply_text(
-                "<b>• برای استفاده از ربات ابتدا در کانال زیر عضو شوید:\n\nسپس /start بزنید</b>",
+                "<b>برای استفاده از ربات ابتدا در کانال زیر عضو شوید:\n\nبعد از عضویت دوباره /start بزنید</b>",
                 reply_to_message_id=message.id,
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("عضویت", url=f"https://t.me/{update_channel}")
+                    InlineKeyboardButton("عضویت در کانال", url=f"https://t.me/{update_channel}")
                 ]])
             )
+
             await client.send_message(
                 log_channel,
-                f"<b>کاربر جدید</b>\n\n"
-                f"ID: `{user_id}`\n"
-                f"Name: {message.from_user.first_name} {message.from_user.last_name or ''}\n"
-                f"Username: @{message.from_user.username or 'ندارد'}\n"
-                f"لینک: <a href='tg://openmessage?user_id={}'>کلیک کنید</a>\n"
-                f"پلن: {user_plan}".format(user_id),
+                f"<b>کاربر جدید به ربات پیوست</b>\n\n"
+                f"آیدی: `{user_id}`\n"
+                f"نام: {message.from_user.first_name} {message.from_user.last_name or ''}\n"
+                f"یوزرنیم: @{message.from_user.username or 'ندارد'}\n"
+                f"لینک: <a href='tg://user?id={user_id}'>کلیک کنید</a>\n"
+                f"پلن: {user_plan}",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("مسدود کردن کاربر", callback_data="ceasepower")
                 ]])
             )
             return
 
-    # Bot Stats
+    # Bot statistics
     botdata(int(botid))
     bot_info = find_one(int(botid))
     total_renames = bot_info.get('total_rename', 0)
@@ -108,48 +103,39 @@ async def send_doc(client, message):
     daily_limit = user_info.get("daily", 0)
     user_plan = user_info.get("usertype", "Free")
 
-    # Anti-Spam Timer
-    if user_plan == "Free":
-        LIMIT = 60
-    else:
-        LIMIT = 10
-
-    time_left = (used_date + LIMIT) - time.time()
-    if time_left > 0:
-        await message.reply_text(
-            f"**لطفاً {int(time_left)} ثانیه صبر کنید و بعد فایل بفرستید**",
-            reply_to_message_id=message.id
-        )
+    # Anti-flood timer
+    LIMIT = 60 if user_plan == "Free" else 10
+    if time.time() - used_date < LIMIT:
+        remaining = int(LIMIT - (time.time() - used_date))
+        await message.reply_text(f"لطفاً {remaining} ثانیه صبر کنید و دوباره فایل بفرستید", quote=True)
         return
 
-    # Get Media
+    # Get file info
     media = await client.get_messages(message.chat.id, message.id)
-    file = getattr(media, "document", None) or getattr(media, "video", None) or getattr(media, "audio", None)
+    file = media.document or media.video or media.audio
     if not file:
         return
 
-    filename = file.file_name or "Unknown"
-    filesize_bytes = file.file_size
+    filename = file.file_name or "بدون نام"
+    filesize = file.file_size
     dc_id = FileId.decode(file.file_id).dc_id
 
-    # Daily Limit Check
+    # Reset daily limit if new day
     today = date_.today()
     expi = daily_limit - int(time.mktime(time.strptime(str(today), '%Y-%m-%d')))
     if expi != 0:
-        epcho = int(time.mktime(time.strptime(str(today), '%Y-%m-%d')))
-        daily_(user_id, epcho)
+        daily_(user_id, int(time.mktime(time.strptime(str(today), '%Y-%m-%d'))))
         used_limit(user_id, 0)
 
-    current_used = user_info.get("used_limit", 0)
-    upload_limit = user_info.get("uploadlimit", 1288490188)  # 1.2 GB default
-    remaining = upload_limit - current_used
-
-    if filesize_bytes > remaining:
+    # Daily upload limit check
+    used_today = user_info.get("used_limit", 0)
+    max_limit = user_info.get("uploadlimit", 1288490188)  # default ~1.2 GB
+    if filesize > (max_limit - used_today):
         await message.reply_text(
-            f"سهمیه روزانه شما تمام شده!\n\n"
-            f"حجم فایل: {humanbytes(filesize_bytes)}\n"
-            f"استفاده شده: {humanbytes(current_used)}\n"
-            f"باقی‌مانده: {humanbytes(remaining)}\n\n"
+            f"سهمیه روزانه شما تمام شد!\n\n"
+            f"حجم فایل: {humanbytes(filesize)}\n"
+            f"استفاده شده امروز: {humanbytes(used_today)}\n"
+            f"باقی‌مانده: {humanbytes(max_limit - used_today)}\n\n"
             "برای فایل‌های بزرگ‌تر پلن خود را ارتقا دهید /upgrade",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("ارتقا پلن", callback_data="upgrade")
@@ -157,28 +143,21 @@ async def send_doc(client, message):
         )
         return
 
-    # 2GB Limit for String Session Bots
-    if filesize_bytes > 2147483648:  # 2 GB
-        if not STRING:  # If using Bot Token (not userbot)
-            await message.reply_text("ربات نمی‌تواند فایل بالای 2GB آپلود کند!")
-            return
-        else:
-            if buy_date and check_expi(buy_date):
-                pass  # Premium user with string session → allow
-            else:
-                await message.reply_text("برای آپلود فایل بالای 2GB باید اکانت پرمیوم داشته باشید.")
-                return
-
-    # Free User 500MB Limit
-    if user_plan == "Free" and filesize_bytes > 500 * 1024 * 1024:
-        await message.reply_text("در پلن رایگان حداکثر 500MB مجاز است.", quote=True)
+    # 2GB limit for bot token
+    if filesize > 2147483648 and not STRING:
+        await message.reply_text("ربات با توکن بات نمی‌تواند فایل بالای 2GB آپلود کند!")
         return
 
-    # Final Reply
+    # Free users 500MB limit
+    if user_plan == "Free" and filesize > 500 * 1024 * 1024:
+        await message.reply_text("در پلن رایگان حداکثر 500MB مجاز است.")
+        return
+
+    # Final message
     await message.reply_text(
-        f"عالی! حالا برای تغییر نام شروع شود؟\n\n"
+        f"فایل دریافت شد!\n\n"
         f"نام فعلی: `{filename}`\n"
-        f"حجم: {humanbytes(filesize_bytes)}\n"
+        f"حجم: {humanbytes(filesize)}\n"
         f"DC: {dc_id}",
         reply_to_message_id=message.id,
         reply_markup=InlineKeyboardMarkup([
@@ -187,6 +166,6 @@ async def send_doc(client, message):
         ])
     )
 
-    # Update Stats
+    # Update bot stats
     total_rename(int(botid), total_renames + 1)
-    total_size(int(botid), total_sizes, filesize_bytes)
+    total_size(int(botid), total_sizes, filesize)
